@@ -4,7 +4,6 @@ export class CountryAPI {
     console.log('[API] Запрос страны:', name);
     
     try {
-      // ДОБАВЛЕНО: flags и cca2 для отображения флага
       const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
       const url = `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=${fields}`;
       
@@ -16,8 +15,6 @@ export class CountryAPI {
       
       const data = await res.json();
       console.log('[API] Получены данные:', data);
-      console.log('[API] Флаг:', data[0]?.flags);
-      console.log('[API] Код страны:', data[0]?.cca2);
       return data;
       
     } catch (error) {
@@ -26,11 +23,34 @@ export class CountryAPI {
     }
   }
 
+  static async fetchByRegion(region) {
+    console.log('[API] Загрузка стран региона:', region);
+    
+    try {
+      const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
+      const url = `https://restcountries.com/v3.1/region/${region}?fields=${fields}`;
+      
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('[API] Загружено стран региона:', data.length);
+      return data;
+      
+    } catch (error) {
+      console.error('[API ERROR] Не удалось загрузить регион:', error);
+      throw new Error('Ошибка загрузки данных региона. Попробуйте позже.');
+    }
+  }
+
   static async fetchAll() {
     console.log('[API] Загрузка всех стран...');
     
     try {
-      const fields = 'name,capital,population,region,flags,cca2';
+      const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
       const url = `https://restcountries.com/v3.1/all?fields=${fields}`;
       
       const res = await fetch(url);
