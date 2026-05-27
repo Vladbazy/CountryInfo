@@ -1,6 +1,5 @@
 export class CountryAPI {
   
-  // Повторная попытка запроса при ошибке
   static async fetchWithRetry(url, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
       try {
@@ -40,8 +39,8 @@ export class CountryAPI {
   static async fetchAll() {
     console.log('[API] Загрузка всех стран...');
     try {
-      // МИНИМАЛЬНЫЕ поля для скорости
-      const fields = 'name,population,region,flags,cca2';
+      // ВАЖНО: включаем flags и cca2
+      const fields = 'name,population,region,flags,cca2,capital,area';
       const url = `https://restcountries.com/v3.1/all?fields=${fields}`;
       
       const data = await this.fetchWithRetry(url, 2, 2000);
@@ -56,8 +55,8 @@ export class CountryAPI {
   static async fetchByRegion(region) {
     console.log('[API] Загрузка региона:', region);
     try {
-      // Минимальные поля
-      const fields = 'name,population,region,flags,cca2';
+      // ВАЖНО: включаем flags и cca2
+      const fields = 'name,population,region,flags,cca2,capital,area';
       const url = `https://restcountries.com/v3.1/region/${region}?fields=${fields}`;
       
       const data = await this.fetchWithRetry(url, 3, 1500);
@@ -65,7 +64,7 @@ export class CountryAPI {
       return data;
     } catch (error) {
       console.error('[API ERROR] Не удалось загрузить регион:', error);
-      throw new Error(`Не удалось загрузить регион ${region}. Попробуйте другой.`);
+      throw new Error(`Не удалось загрузить регион ${region}.`);
     }
   }
 }
