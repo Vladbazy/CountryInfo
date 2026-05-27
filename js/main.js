@@ -194,22 +194,48 @@ function applyFiltersAndRender() {
 }
 
 // РЕНДЕР ОДНОЙ СТРАНЫ (ДОБАВЛЕНО)
+// РЕНДЕР ОДНОЙ СТРАНЫ
 function renderSingle(country) {
+  console.log('[RENDER] Отображение страны:', country.name);
+  console.log('[RENDER] URL флага:', country.flag);
+  
   const container = document.getElementById('countries-list');
   container.innerHTML = '';
   
   const card = document.createElement('article');
   card.className = 'country-card';
+  
+  // Создаем img элемент с обработчиком ошибок
+  const flagImg = document.createElement('img');
+  flagImg.src = country.flag;
+  flagImg.alt = `Флаг ${country.name}`;
+  flagImg.style.cssText = 'width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:15px;border:1px solid #eee;';
+  
+  // Если флаг не загрузился — используем placeholder
+  flagImg.onerror = function() {
+    console.warn('[RENDER] Флаг не загрузился, используем fallback');
+    this.src = `https://flagcdn.com/w320/${country.cca2?.toLowerCase() || 'zz'}.png`;
+  };
+  
+  // Второй fallback если и код страны не сработал
+  flagImg.addEventListener('error', function() {
+    this.src = 'https://via.placeholder.com/320x200/4A90D9/FFFFFF?text=' + encodeURIComponent(country.name);
+  }, { once: true });
+  
   card.innerHTML = `
-    <img src="${country.flag}" alt="${country.name}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:15px;">
-    <h3>${country.name}</h3>
-    <p><strong>Столица:</strong> ${country.capital}</p>
+    <h3>${UIView.escapeHtml(country.name)}</h3>
+    <p><strong>Столица:</strong> ${UIView.escapeHtml(country.capital)}</p>
     <p><strong>Население:</strong> ${country.getFormattedPopulation()}</p>
-    <p><strong>Регион:</strong> ${country.region}</p>
-    <p><strong>Языки:</strong> ${country.languages}</p>
-    ${country.currencies !== 'Нет данных' ? `<p><strong>Валюта:</strong> ${country.currencies}</p>` : ''}
-    ${country.area > 0 ? `<p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>` : ''}
+    <p><strong>Регион:</strong> ${UIView.escapeHtml(country.region)}</p>
+    <p><strong>Языки:</strong> ${UIView.escapeHtml(country.languages)}</p>
+    ${country.currencies !== 'Нет данных' ? 
+      `<p><strong>Валюта:</strong> ${UIView.escapeHtml(country.currencies)}</p>` : ''}
+    ${country.area > 0 ? 
+      `<p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>` : ''}
   `;
+  
+  // Вставляем флаг ПЕРВЫМ элементом
+  card.insertBefore(flagImg, card.firstChild);
   
   container.appendChild(card);
   UIView.renderStats(calculateStats([country]));
