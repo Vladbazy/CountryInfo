@@ -42,7 +42,24 @@
     </div>
 
     <div id="stats-panel" class="stats hidden"></div>
-    <div id="countries-list" class="grid"></div>
+    <div id="stats-panel" class="stats hidden"></div>
+
+<!-- Режим сравнения -->
+<div id="comparison-mode" class="comparison-container hidden">
+  <h3>📊 Сравнение стран</h3>
+  <div class="comparison-grid">
+    <div id="country-1-slot" class="comparison-slot">
+      <p class="slot-placeholder">Выберите первую страну</p>
+    </div>
+    <div id="country-2-slot" class="comparison-slot">
+      <p class="slot-placeholder">Выберите вторую страну</p>
+    </div>
+  </div>
+  <button id="clear-comparison" class="btn-secondary">Очистить сравнение</button>
+</div>
+
+<!-- Одиночный режим (поиск одной страны) -->
+<div id="single-mode" class="grid"></div>
   </section>
 
   <script type="module" src="./js/main.js"></script>

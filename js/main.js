@@ -5,18 +5,19 @@ import {
   calculateStats, 
   sortByPopulation, 
   sortByName, 
-  filterByRegion,
-  debounce 
+  filterByRegion
 } from './utils.js';
 
-// Глобальное состояние приложения (ИСПРАВЛЕНО: appState → state)
+// Глобальное состояние приложения
 const state = {
   username: '',
   allCountries: [],
   displayedCountries: [],
   currentRegion: 'all',
   currentSort: null,
-  history: JSON.parse(localStorage.getItem('searchHistory')) || []  // ДОБАВЛЕНО
+  history: JSON.parse(localStorage.getItem('searchHistory')) || [],
+  comparisonMode: false,
+  selectedCountries: []
 };
 
 // ИНИЦИАЛИЗАЦИЯ
@@ -31,13 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadUsernameFromStorage() {
   const saved = localStorage.getItem('countryApp_username');
   if (saved) {
-    state.username = saved;  // ИСПРАВЛЕНО: appState → state
+    state.username = saved;
     console.log('[APP] Восстановлено имя из localStorage:', saved);
   }
 }
 
 function saveUsername(username) {
-  state.username = username;  // ИСПРАВЛЕНО: appState → state
+  state.username = username;
   localStorage.setItem('countryApp_username', username);
   console.log('[APP] Сохранено имя:', username);
 }
@@ -82,8 +83,10 @@ function initMainScreen() {
   
   const searchInput = document.getElementById('search-input');
   const regionFilter = document.getElementById('region-filter');
+  const loadAllBtn = document.getElementById('load-all-btn');
   const sortPopBtn = document.getElementById('sort-pop-btn');
   const sortNameBtn = document.getElementById('sort-name-btn');
+  const clearComparisonBtn = document.getElementById('clear-comparison');
 
   if (!searchInput) {
     console.error('[ERROR] Элемент search-input не найден в HTML!');
@@ -108,43 +111,99 @@ function initMainScreen() {
     if (val.length < 1) return;
     
     const matches = new Set();
-    state.history.forEach(h => { if (h.toLowerCase().includes(val)) matches.add(h); });
+    state.history.forEach(h => { 
+      if (h.toLowerCase().includes(val)) matches.add(h); 
+    });
+    
     state.allCountries.forEach(c => {
-      if (c.name.toLowerCase().includes(val) || c.russianName?.toLowerCase().includes(val)) {
+      if (c.name.toLowerCase().includes(val)) {
         matches.add(c.name);
       }
     });
+    
     UIView.updateSuggestions(Array.from(matches).slice(0, 6));
   });
 
   // 3. Фильтр по региону
   if (regionFilter) {
     regionFilter.addEventListener('change', (e) => {
-      state.currentRegion = e.target.value;  // ИСПРАВЛЕНО: state.region → state.currentRegion
-      applyFiltersAndRender();  // ИСПРАВЛЕНО: applyFilters → applyFiltersAndRender
-    });
-  }
-
-  // 4. Сортировка по населению
-  if (sortPopBtn) {
-    sortPopBtn.addEventListener('click', () => {
-      state.currentSort = state.currentSort === 'pop-asc' ? 'pop-desc' : 'pop-asc';
-      state.displayedCountries = sortByPopulation(state.displayedCountries, state.currentSort === 'pop-desc' ? 'desc' : 'asc');
+      state.currentRegion = e.target.value;
       applyFiltersAndRender();
     });
   }
 
-  // 5. Сортировка по названию
+  // 4. Загрузить всё (только статистика)
+  if (loadAllBtn) {
+    loadAllBtn.addEventListener('click', async () => {
+      UIView.setLoading(true);
+      try {
+        const rawData = await CountryAPI.fetchAll();
+        state.allCountries = rawData.map(raw => new Country(raw));
+        
+        // Показываем только общую статистику
+        const stats = calculateStats(state.allCountries);
+        UIView.renderGlobalStats(stats, state.allCountries.length);
+        
+        // Скрываем режимы отображения стран
+        document.getElementById('single-mode').classList.add('hidden');
+        document.getElementById('comparison-mode').classList.add('hidden');
+        
+        console.log('[INFO] Загружено стран:', state.allCountries.length);
+      } catch (error) {
+        UIView.showError(error.message);
+      } finally {
+        UIView.setLoading(false);
+      }
+    });
+  }
+
+  // 5. Сортировка по населению
+  if (sortPopBtn) {
+    sortPopBtn.addEventListener('click', () => {
+      if (state.comparisonMode && state.selectedCountries.length > 1) {
+        state.currentSort = state.currentSort === 'pop-asc' ? 'pop-desc' : 'pop-asc';
+        state.selectedCountries = sortByPopulation(
+          state.selectedCountries, 
+          state.currentSort === 'pop-desc' ? 'desc' : 'asc'
+        );
+        renderComparison();
+      }
+    });
+  }
+
+  // 6. Сортировка по названию
   if (sortNameBtn) {
-    state.currentSort = state.currentSort === 'name-asc' ? 'name-desc' : 'name-asc';
-    state.displayedCountries = sortByName(state.displayedCountries, state.currentSort === 'name-desc' ? 'desc' : 'asc');
-    applyFiltersAndRender();
+    sortNameBtn.addEventListener('click', () => {
+      if (state.comparisonMode && state.selectedCountries.length > 1) {
+        state.currentSort = state.currentSort === 'name-asc' ? 'name-desc' : 'name-asc';
+        state.selectedCountries = sortByName(
+          state.selectedCountries, 
+          state.currentSort === 'name-desc' ? 'desc' : 'asc'
+        );
+        renderComparison();
+      }
+    });
+  }
+
+  // 7. Очистка сравнения
+  if (clearComparisonBtn) {
+    clearComparisonBtn.addEventListener('click', () => {
+      state.comparisonMode = false;
+      state.selectedCountries = [];
+      document.getElementById('comparison-mode').classList.add('hidden');
+      document.getElementById('single-mode').classList.remove('hidden');
+    });
   }
 }
 
 // ПОИСК СТРАНЫ
 async function handleSearch(query) {
-  if (!query) return;
+  console.log('[HANDLE SEARCH] Запрос:', query);
+  
+  if (!query) {
+    console.warn('[HANDLE SEARCH] Пустой запрос');
+    return;
+  }
 
   // Сохраняем в историю
   if (!state.history.includes(query)) {
@@ -156,31 +215,39 @@ async function handleSearch(query) {
   UIView.setLoading(true);
   
   try {
+    console.log('[API] Запрос к API...');
     const raw = await CountryAPI.fetchByName(query);
     const country = new Country(raw[0]);
+    console.log('[API] Получено:', country);
     
-    renderSingle(country);
+    // Если уже есть 2 страны в сравнении — заменяем первую
+    if (state.comparisonMode && state.selectedCountries.length >= 2) {
+      state.selectedCountries.shift();
+    }
+    
+    state.selectedCountries.push(country);
+    
+    // Если выбрано 2 страны — включаем режим сравнения
+    if (state.selectedCountries.length === 2) {
+      state.comparisonMode = true;
+      document.getElementById('single-mode').classList.add('hidden');
+      document.getElementById('comparison-mode').classList.remove('hidden');
+      renderComparison();
+    } else {
+      // Одиночный режим
+      state.comparisonMode = false;
+      document.getElementById('comparison-mode').classList.add('hidden');
+      document.getElementById('single-mode').classList.remove('hidden');
+      renderSingle(country);
+    }
     
   } catch (err) {
-    UIView.showError('Страна не найдена.');
+    console.error('[ERROR] Ошибка поиска:', err);
+    UIView.showError('Страна не найдена: ' + err.message);
     UIView.clearCountries();
     UIView.toggleStats(false);
   } finally {
     UIView.setLoading(false);
-  }
-}
-
-// ЗАГРУЗКА ВСЕХ СТРАН
-async function loadAllCountries() {
-  UIView.setLoading(true);
-  
-  try {
-    const rawData = await CountryAPI.fetchAll();
-    state.allCountries = rawData.map(raw => new Country(raw));
-    state.displayedCountries = [...state.allCountries];
-    applyFiltersAndRender();
-  } catch (error) {
-    UIView.showError(error.message);
   }
 }
 
@@ -193,31 +260,26 @@ function applyFiltersAndRender() {
   UIView.setLoading(false);
 }
 
-// РЕНДЕР ОДНОЙ СТРАНЫ (ДОБАВЛЕНО)
 // РЕНДЕР ОДНОЙ СТРАНЫ
 function renderSingle(country) {
   console.log('[RENDER] Отображение страны:', country.name);
-  console.log('[RENDER] URL флага:', country.flag);
   
-  const container = document.getElementById('countries-list');
+  const container = document.getElementById('single-mode');
   container.innerHTML = '';
   
   const card = document.createElement('article');
   card.className = 'country-card';
   
-  // Создаем img элемент с обработчиком ошибок
   const flagImg = document.createElement('img');
   flagImg.src = country.flag;
   flagImg.alt = `Флаг ${country.name}`;
   flagImg.style.cssText = 'width:100%;height:150px;object-fit:cover;border-radius:8px;margin-bottom:15px;border:1px solid #eee;';
   
-  // Если флаг не загрузился — используем placeholder
   flagImg.onerror = function() {
     console.warn('[RENDER] Флаг не загрузился, используем fallback');
     this.src = `https://flagcdn.com/w320/${country.cca2?.toLowerCase() || 'zz'}.png`;
   };
   
-  // Второй fallback если и код страны не сработал
   flagImg.addEventListener('error', function() {
     this.src = 'https://via.placeholder.com/320x200/4A90D9/FFFFFF?text=' + encodeURIComponent(country.name);
   }, { once: true });
@@ -234,11 +296,46 @@ function renderSingle(country) {
       `<p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>` : ''}
   `;
   
-  // Вставляем флаг ПЕРВЫМ элементом
   card.insertBefore(flagImg, card.firstChild);
-  
   container.appendChild(card);
   UIView.renderStats(calculateStats([country]));
+}
+
+// РЕНДЕР СРАВНЕНИЯ ДВУХ СТРАН
+function renderComparison() {
+  console.log('[RENDER] Сравнение стран:', state.selectedCountries);
+  
+  const slot1 = document.getElementById('country-1-slot');
+  const slot2 = document.getElementById('country-2-slot');
+  
+  if (state.selectedCountries.length < 2) {
+    slot1.innerHTML = '<p class="slot-placeholder">Выберите первую страну</p>';
+    slot2.innerHTML = '<p class="slot-placeholder">Выберите вторую страну</p>';
+    return;
+  }
+  
+  const [country1, country2] = state.selectedCountries;
+  
+  slot1.innerHTML = createComparisonCard(country1);
+  slot2.innerHTML = createComparisonCard(country2);
+  
+  // Показываем статистику сравнения
+  const stats = calculateStats(state.selectedCountries);
+  UIView.renderStats(stats);
+}
+
+// Создание карточки для сравнения
+function createComparisonCard(country) {
+  return `
+    <img src="${country.flag}" alt="${country.name}" 
+         onerror="this.src='https://flagcdn.com/w320/${country.cca2?.toLowerCase() || 'zz'}.png'"
+         style="width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:10px;">
+    <h4>${UIView.escapeHtml(country.name)}</h4>
+    <p><strong>Столица:</strong> ${UIView.escapeHtml(country.capital)}</p>
+    <p><strong>Население:</strong> ${country.getFormattedPopulation()}</p>
+    <p><strong>Регион:</strong> ${UIView.escapeHtml(country.region)}</p>
+    <p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>
+  `;
 }
 
 // ЭКСПОРТ ДЛЯ ТЕСТИРОВАНИЯ

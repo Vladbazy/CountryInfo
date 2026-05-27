@@ -103,4 +103,23 @@ export class UIView {
       datalist.appendChild(option);
     });
   }
+
+  static renderGlobalStats(stats, totalCount) {
+    console.log('[UI] Рендер глобальной статистики');
+    
+    const panel = document.getElementById('stats-panel');
+    if (!panel) return;
+    
+    panel.classList.remove('hidden');
+    panel.innerHTML = `
+      <h4>🌍 Глобальная статистика</h4>
+      <p> Всего стран в мире: <strong>${totalCount}</strong></p>
+      <p>👥 Общее население: <strong>${stats.totalPopulation}</strong></p>
+      <p>📈 Среднее население: <strong>${stats.avgPopulation}</strong></p>
+      <p>🏆 Самая населённая: <strong>${stats.mostPopulated?.name || 'N/A'}</strong></p>
+      <p style="margin-top:10px;color:#666;font-size:0.9em;">
+        💡 Введите название страны для поиска или сравнения
+      </p>
+    `;
+  }
 }
