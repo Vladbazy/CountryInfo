@@ -1,71 +1,71 @@
 export class CountryAPI {
   
+  // Повторная попытка запроса при ошибке
+  static async fetchWithRetry(url, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        console.log(`[API] Попытка ${i + 1} не удалась, ждем ${delay}мс...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
   static async fetchByName(name) {
     console.log('[API] Запрос страны:', name);
-    
     try {
       const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
       const url = `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=${fields}`;
       
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      console.log('[API] Получены данные:', data);
+      const data = await this.fetchWithRetry(url);
       return data;
-      
     } catch (error) {
-      console.error('[API ERROR] Не удалось загрузить страну:', error);
-      throw new Error('Страна не найдена. Проверьте правильность названия.');
-    }
-  }
-
-  static async fetchByRegion(region) {
-    console.log('[API] Загрузка стран региона:', region);
-    
-    try {
-      const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
-      const url = `https://restcountries.com/v3.1/region/${region}?fields=${fields}`;
-      
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
-      console.log('[API] Загружено стран региона:', data.length);
-      return data;
-      
-    } catch (error) {
-      console.error('[API ERROR] Не удалось загрузить регион:', error);
-      throw new Error('Ошибка загрузки данных региона. Попробуйте позже.');
+      console.error('[API ERROR]', error);
+      throw new Error('Страна не найдена.');
     }
   }
 
   static async fetchAll() {
     console.log('[API] Загрузка всех стран...');
-    
     try {
-      const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
+      // МИНИМАЛЬНЫЕ поля для скорости
+      const fields = 'name,population,region,flags,cca2';
       const url = `https://restcountries.com/v3.1/all?fields=${fields}`;
       
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      
-      const data = await res.json();
+      const data = await this.fetchWithRetry(url, 2, 2000);
       console.log('[API] Загружено стран:', data.length);
       return data;
-      
     } catch (error) {
       console.error('[API ERROR] Не удалось загрузить все страны:', error);
-      throw new Error('Ошибка загрузки данных. Попробуйте позже.');
+      throw new Error('Не удалось загрузить все страны. Попробуйте выбрать регион.');
+    }
+  }
+
+  static async fetchByRegion(region) {
+    console.log('[API] Загрузка региона:', region);
+    try {
+      // Минимальные поля
+      const fields = 'name,population,region,flags,cca2';
+      const url = `https://restcountries.com/v3.1/region/${region}?fields=${fields}`;
+      
+      const data = await this.fetchWithRetry(url, 3, 1500);
+      console.log('[API] Загружено стран региона:', data.length);
+      return data;
+    } catch (error) {
+      console.error('[API ERROR] Не удалось загрузить регион:', error);
+      throw new Error(`Не удалось загрузить регион ${region}. Попробуйте другой.`);
     }
   }
 }

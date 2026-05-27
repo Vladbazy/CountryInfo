@@ -125,40 +125,37 @@ function initMainScreen() {
   });
 
   // 3. Фильтр по региону (с загрузкой из API)
+// 3. Фильтр по региону
 if (regionFilter) {
   regionFilter.addEventListener('change', async (e) => {
     state.currentRegion = e.target.value;
-    
     UIView.setLoading(true);
     
     try {
+      let rawData;
       if (state.currentRegion === 'all') {
-        // Загружаем ВСЕ страны
-        const rawData = await CountryAPI.fetchAll();
-        state.allCountries = rawData.map(raw => new Country(raw));
+        // Пробуем загрузить все страны
+        rawData = await CountryAPI.fetchAll();
       } else {
-        // Загружаем страны конкретного региона
-        const rawData = await CountryAPI.fetchByRegion(state.currentRegion);
-        state.allCountries = rawData.map(raw => new Country(raw));
+        rawData = await CountryAPI.fetchByRegion(state.currentRegion);
       }
       
-      state.displayedCountries = [...state.allCountries];
-      
-      // Показываем статистику и рендерим
-      const stats = calculateStats(state.allCountries);
-      UIView.renderGlobalStats(stats, state.allCountries.length);
-      
-      // Скрываем режимы отображения отдельных стран
-      document.getElementById('single-mode').classList.add('hidden');
-      document.getElementById('comparison-mode').classList.add('hidden');
-      
-      // Показываем уведомление
-      const regionName = state.currentRegion === 'all' ? 'всех стран' : `региона "${state.currentRegion}"`;
-      console.log(`[INFO] Загружено ${state.allCountries.length} стран ${regionName}`);
+      if (rawData && rawData.length > 0) {
+        state.allCountries = rawData.map(raw => new Country(raw));
+        state.displayedCountries = [...state.allCountries];
+        
+        const stats = calculateStats(state.allCountries);
+        UIView.renderGlobalStats(stats, state.allCountries.length);
+        
+        document.getElementById('single-mode').classList.add('hidden');
+        document.getElementById('comparison-mode').classList.add('hidden');
+        
+        console.log(`✅ Загружено ${state.allCountries.length} стран`);
+      }
       
     } catch (error) {
       console.error('[ERROR]', error);
-      UIView.showError(error.message);
+      UIView.showError(error.message + '\n\nСовет: Попробуйте выбрать Европу или Азию - эти регионы работают стабильнее.');
     } finally {
       UIView.setLoading(false);
     }
