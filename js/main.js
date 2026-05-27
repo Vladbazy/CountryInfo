@@ -164,33 +164,19 @@ if (regionFilter) {
   });
 }
 
-  // 4. Загрузить всё (загружаем все страны)
-// 4. Загрузить всё
+// 4. Кнопка "Загрузить"
 if (loadAllBtn) {
   loadAllBtn.addEventListener('click', async () => {
-    UIView.setLoading(true);
+    const searchInput = document.getElementById('search-input');
+    const query = searchInput?.value.trim();
     
-    try {
-      const rawData = await CountryAPI.fetchAll();
-      state.allCountries = rawData.map(raw => new Country(raw));
-      state.displayedCountries = [...state.allCountries];
-      
-      // Рендерим список
-      UIView.renderCountries(state.allCountries);
-      
-      // Статистика
-      const stats = calculateStats(state.allCountries);
-      UIView.renderStats(stats);
-      
-      document.getElementById('comparison-mode').classList.add('hidden');
-      
-      alert(`✅ Загружено ${state.allCountries.length} стран!`);
-      
-    } catch (error) {
-      UIView.showError(error.message);
-    } finally {
-      UIView.setLoading(false);
+    if (!query) {
+      UIView.showError('Введите название страны для поиска!');
+      return;
     }
+    
+    // Вызываем ту же функцию поиска, что и при нажатии Enter
+    await handleSearch(query);
   });
 }
 
