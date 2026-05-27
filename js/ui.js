@@ -15,10 +15,10 @@ export class UIView {
     }
   }
 
-  static renderCountries(countries) {
+    static renderCountries(countries) {
     console.log('[UI] Рендер стран:', countries.length);
     
-    const container = document.getElementById('countries-list');
+    const container = document.getElementById('single-mode');
     if (!container) return;
     
     if (countries.length === 0) {
@@ -26,19 +26,21 @@ export class UIView {
       return;
     }
     
+    // Показываем контейнер и скрываем сравнение
+    container.classList.remove('hidden');
+    document.getElementById('comparison-mode').classList.add('hidden');
+    
     container.innerHTML = countries.map(country => `
       <article class="country-card">
-        <img src="${country.flag}" alt="Флаг ${country.name}" 
-             onerror="this.src='https://via.placeholder.com/320x200?text=No+Flag'">
+        <img src="${country.flag}" 
+             alt="Флаг ${country.name}" 
+             onerror="this.src='https://flagcdn.com/w320/${country.cca2?.toLowerCase() || 'zz'}.png'"
+             style="width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:10px;border:1px solid #eee;">
         <h3>${this.escapeHtml(country.name)}</h3>
-        <p><strong>Столица:</strong> ${this.escapeHtml(country.capital)}</p>
+        <p><strong>Столица:</strong> ${this.escapeHtml(country.capital || 'Нет данных')}</p>
         <p><strong>Население:</strong> ${country.getFormattedPopulation()}</p>
         <p><strong>Регион:</strong> ${this.escapeHtml(country.region)}</p>
-        <p><strong>Языки:</strong> ${this.escapeHtml(country.languages)}</p>
-        ${country.currencies !== 'Нет данных' ? 
-          `<p><strong>Валюта:</strong> ${this.escapeHtml(country.currencies)}</p>` : ''}
-        ${country.area > 0 ? 
-          `<p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>` : ''}
+        ${country.area ? `<p><strong>Площадь:</strong> ${country.getFormattedArea()}</p>` : ''}
       </article>
     `).join('');
   }

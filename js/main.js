@@ -124,7 +124,6 @@ function initMainScreen() {
     UIView.updateSuggestions(Array.from(matches).slice(0, 6));
   });
 
-  // 3. Фильтр по региону (с загрузкой из API)
 // 3. Фильтр по региону
 if (regionFilter) {
   regionFilter.addEventListener('change', async (e) => {
@@ -134,7 +133,6 @@ if (regionFilter) {
     try {
       let rawData;
       if (state.currentRegion === 'all') {
-        // Пробуем загрузить все страны
         rawData = await CountryAPI.fetchAll();
       } else {
         rawData = await CountryAPI.fetchByRegion(state.currentRegion);
@@ -144,18 +142,22 @@ if (regionFilter) {
         state.allCountries = rawData.map(raw => new Country(raw));
         state.displayedCountries = [...state.allCountries];
         
-        const stats = calculateStats(state.allCountries);
-        UIView.renderGlobalStats(stats, state.allCountries.length);
+        // Рендерим список стран
+        UIView.renderCountries(state.allCountries);
         
-        document.getElementById('single-mode').classList.add('hidden');
+        // Показываем статистику
+        const stats = calculateStats(state.allCountries);
+        UIView.renderStats(stats);
+        
+        // Скрываем сравнение
         document.getElementById('comparison-mode').classList.add('hidden');
         
-        console.log(`✅ Загружено ${state.allCountries.length} стран`);
+        console.log(`✅ Загружено и отображено ${state.allCountries.length} стран`);
       }
       
     } catch (error) {
       console.error('[ERROR]', error);
-      UIView.showError(error.message + '\n\nСовет: Попробуйте выбрать Европу или Азию - эти регионы работают стабильнее.');
+      UIView.showError(error.message);
     } finally {
       UIView.setLoading(false);
     }
@@ -163,6 +165,7 @@ if (regionFilter) {
 }
 
   // 4. Загрузить всё (загружаем все страны)
+// 4. Загрузить всё
 if (loadAllBtn) {
   loadAllBtn.addEventListener('click', async () => {
     UIView.setLoading(true);
@@ -172,17 +175,19 @@ if (loadAllBtn) {
       state.allCountries = rawData.map(raw => new Country(raw));
       state.displayedCountries = [...state.allCountries];
       
-      const stats = calculateStats(state.allCountries);
-      UIView.renderGlobalStats(stats, state.allCountries.length);
+      // Рендерим список
+      UIView.renderCountries(state.allCountries);
       
-      document.getElementById('single-mode').classList.add('hidden');
+      // Статистика
+      const stats = calculateStats(state.allCountries);
+      UIView.renderStats(stats);
+      
       document.getElementById('comparison-mode').classList.add('hidden');
       
-      alert(`✅ Загружено ${state.allCountries.length} стран!\n\nТеперь вы можете:\n- Искать конкретные страны\n- Сравнивать их между собой\n- Сортировать по населению`);
+      alert(`✅ Загружено ${state.allCountries.length} стран!`);
       
     } catch (error) {
-      console.error('[ERROR]', error);
-      UIView.showError('Не удалось загрузить все страны. Попробуйте выбрать регион.');
+      UIView.showError(error.message);
     } finally {
       UIView.setLoading(false);
     }
