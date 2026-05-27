@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Информация о странах</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Экран приветствия -->
+  <section id="welcome-screen" class="screen active">
+    <h1>Добро пожаловать!</h1>
+    <p>Введите ваше имя для начала работы</p>
+    <input type="text" id="username-input" placeholder="Ваше имя" required>
+    <button id="next-btn">Далее</button>
+  </section>
+
+  <!-- Главный экран -->
+  <section id="main-screen" class="screen hidden">
+    <header>
+      <h2 id="greeting"></h2>
+    </header>
+    
+    <div class="controls">
+      <input type="text" id="search-input" placeholder="Поиск страны...">
+      <select id="region-filter">
+        <option value="all">Все регионы</option>
+        <option value="Europe">Европа</option>
+        <option value="Asia">Азия</option>
+        <option value="Americas">Америка</option>
+        <option value="Africa">Африка</option>
+        <option value="Oceania">Океания</option>
+      </select>
+      <button id="load-all-btn">Загрузить все страны</button>
+      <button id="sort-pop-btn">Сортировать по населению</button>
+      <button id="sort-name-btn">Сортировать по названию</button>
+    </div>
+
+    <div id="stats-panel" class="stats hidden"></div>
+    <div id="countries-list" class="grid"></div>
+  </section>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
