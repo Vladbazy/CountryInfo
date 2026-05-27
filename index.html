@@ -22,7 +22,11 @@
     </header>
     
     <div class="controls">
-      <input type="text" id="search-input" placeholder="Поиск страны...">
+      <div style="position: relative; flex: 1;">
+        <input type="text" id="search-input" list="search-suggestions" placeholder="Поиск страны...">
+        <datalist id="search-suggestions"></datalist>
+      </div>
+      
       <select id="region-filter">
         <option value="all">Все регионы</option>
         <option value="Europe">Европа</option>
@@ -31,9 +35,10 @@
         <option value="Africa">Африка</option>
         <option value="Oceania">Океания</option>
       </select>
-      <button id="load-all-btn">Загрузить все страны</button>
-      <button id="sort-pop-btn">Сортировать по населению</button>
-      <button id="sort-name-btn">Сортировать по названию</button>
+      
+      <button id="load-all-btn">Загрузить всё</button>
+      <button id="sort-pop-btn">Сорт. по населению</button>
+      <button id="sort-name-btn">Сорт. по названию</button>
     </div>
 
     <div id="stats-panel" class="stats hidden"></div>
