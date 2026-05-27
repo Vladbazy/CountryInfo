@@ -91,4 +91,16 @@ export class UIView {
     div.textContent = text;
     return div.innerHTML;
   }
+
+    static updateSuggestions(suggestions) {
+    const datalist = document.getElementById('search-suggestions');
+    if (!datalist) return;
+    
+    datalist.innerHTML = '';
+    suggestions.forEach(text => {
+      const option = document.createElement('option');
+      option.value = text;
+      datalist.appendChild(option);
+    });
+  }
 }

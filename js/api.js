@@ -4,15 +4,17 @@ export class CountryAPI {
     console.log('[API] Запрос страны:', name);
     
     try {
-      const response = await fetch(
-        `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}`
-      );
+      // Указываем только необходимые поля 
+      const fields = 'name,capital,population,region,flags,cca2';
+      const url = `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=${fields}`;
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
       
-      const data = await response.json();
+      const data = await res.json();
       console.log('[API] Получены данные:', data);
       return data;
       
@@ -26,41 +28,23 @@ export class CountryAPI {
     console.log('[API] Загрузка всех стран...');
     
     try {
-      const response = await fetch('https://restcountries.com/v3.1/all');
+      // Для всех стран тоже указываем fields
+      const fields = 'name,capital,population,region,flags,cca2';
+      const url = `https://restcountries.com/v3.1/all?fields=${fields}`;
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
       
-      const data = await response.json();
+      const data = await res.json();
       console.log('[API] Загружено стран:', data.length);
       return data;
       
     } catch (error) {
       console.error('[API ERROR] Не удалось загрузить все страны:', error);
       throw new Error('Ошибка загрузки данных. Попробуйте позже.');
-    }
-  }
-
-  static async fetchByRegion(region) {
-    console.log('[API] Загрузка стран региона:', region);
-    
-    try {
-      const response = await fetch(
-        `https://restcountries.com/v3.1/region/${region}`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('[API] Загружено стран региона:', data.length);
-      return data;
-      
-    } catch (error) {
-      console.error('[API ERROR] Не удалось загрузить регион:', error);
-      throw new Error('Ошибка загрузки данных региона.');
     }
   }
 }
