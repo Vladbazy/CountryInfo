@@ -4,8 +4,8 @@ export class CountryAPI {
     console.log('[API] Запрос страны:', name);
     
     try {
-      // Указываем только необходимые поля 
-      const fields = 'name,capital,population,region,flags,cca2';
+      // ДОБАВЛЕНО: flags и cca2 для отображения флага
+      const fields = 'name,capital,population,region,flags,cca2,languages,currencies,area';
       const url = `https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=${fields}`;
       
       const res = await fetch(url);
@@ -16,6 +16,8 @@ export class CountryAPI {
       
       const data = await res.json();
       console.log('[API] Получены данные:', data);
+      console.log('[API] Флаг:', data[0]?.flags);
+      console.log('[API] Код страны:', data[0]?.cca2);
       return data;
       
     } catch (error) {
@@ -28,7 +30,6 @@ export class CountryAPI {
     console.log('[API] Загрузка всех стран...');
     
     try {
-      // Для всех стран тоже указываем fields
       const fields = 'name,capital,population,region,flags,cca2';
       const url = `https://restcountries.com/v3.1/all?fields=${fields}`;
       
